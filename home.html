@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pubali EduHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdfa;
+        }
+        .scrollbar-custom {
+            scrollbar-width: thin;
+            scrollbar-color: #4fd1c5 #f0fdfa;
+        }
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 8px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #f0fdfa;
+            border-radius: 10px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #4fd1c5;
+            border-radius: 10px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: #38b2ac;
+        }
+        .modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .chat-message-sent {
+            background-color: #4fd1c5;
+        }
+        .chat-message-received {
+            background-color: #f0fdfa;
+        }
+        #course-detail {
+            min-height: calc(100vh - 8rem);
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-[#f0fdfa] flex h-screen overflow-hidden">
+    <div id="main-app" class="flex-1 flex flex-row h-full">
+        <aside class="w-64 bg-white p-6 shadow-xl rounded-r-3xl flex-shrink-0 flex flex-col transform transition-transform duration-300 ease-in-out">
+            <div class="flex items-center justify-center mb-10">
+                <svg class="h-10 w-10 text-[#14b8a6] animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.438 9.256 5 7.74 5 5.56 5 3.753 6.646 3.037 8.932M12 6.253C13.168 5.438 14.744 5 16.26 5c2.18 0 3.987 1.646 4.703 3.932M12 6.253a15.228 15.228 0 011.532 2.197M12 6.253L12 12m-6.845 3.228a22.518 22.518 0 001.07 1.957c.362.433.722.84 1.087 1.276A15.424 15.424 0 0012 21.902c2.479-1.282 4.545-3.21 6.136-5.526A15.025 15.025 0 0121.845 12.83M12 12V6.253M12 12a8.961 8.961 0 01-1.555 4.877M12 12a8.961 8.961 0 001.555 4.877" />
+                </svg>
+                <span class="text-2xl font-extrabold text-gray-900 ml-2">Pubali EduHub</span>
+            </div>
+            <nav class="flex-grow" role="navigation" aria-label="Main navigation">
+                <ul>
+                    <li class="mb-4">
+                        <a href="#" data-page="dashboard" class="flex items-center p-3 text-gray-700 hover:text-[#14b8a6] hover:bg-[#e0f2f1] rounded-xl transition-all duration-200" aria-current="page">
+                            <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-10l2-2m-2 2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="mb-4">
+                        <a href="#" data-page="courses" class="flex items-center p-3 text-gray-700 hover:text-[#14b8a6] hover:bg-[#e0f2f1] rounded-xl transition-all duration-200">
+                            <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"></path></svg>
+                            Subjects
+                        </a>
+                    </li>
+                    <li class="mb-4">
+                        <a href="#" data-page="quizzes" class="flex items-center p-3 text-gray-700 hover:text-[#14b8a6] hover:bg-[#e0f2f1] rounded-xl transition-all duration-200">
+                            <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M16 16h.01"></path></svg>
+                            Quizzes
+                        </a>
+                    </li>
+                    <li class="mb-4">
+                        <a href="#" data-page="notes" class="flex items-center p-3 text-gray-700 hover:text-[#14b8a6] hover:bg-[#e0f2f1] rounded-xl transition-all duration-200">
+                            <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            Notes
+                        </a>
+                    </li>
+                    <li class="mb-4">
+                        <a href="#" data-page="profile" class="flex items-center p-3 text-gray-700 hover:text-[#14b8a6] hover:bg-[#e0f2f1] rounded-xl transition-all duration-200">
+                            <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.939 13.939 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Profile
+                        </a>
+                    </li>
+                    <li class="mb-4">
+                        <a href="#" data-page="chat" class="flex items-center p-3 text-gray-700 hover:text-[#14b8a6] hover:bg-[#e0f2f1] rounded-xl transition-all duration-200">
+                            <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                            EduChat
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="mt-auto">
+                <a href="#" id="logout-link" class="flex items-center p-3 text-gray-700 hover:text-red-500 hover:bg-gray-100 rounded-xl transition-all duration-200">
+                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Logout
+                </a>
+            </div>
+        </aside>
+        <main class="flex-1 overflow-y-auto p-8">
+            <section id="dashboard" class="page-section grid grid-cols-1 lg:grid-cols-3 gap-8 p-8 bg-white rounded-3xl shadow-2xl">
+                <div class="lg:col-span-3 space-y-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <a href="enroll.html" class="block">
+                            <div class="bg-gradient-to-br from-[#14b8a6] to-[#0d9488] rounded-2xl p-6 shadow-lg transform hover:scale-105 transition-transform duration-300 cursor-pointer">
+                                <h2 class="text-lg font-semibold text-white">Subjects Enrolled</h2>
+                                <p class="text-5xl font-extrabold text-white mt-2" id="subjects-enrolled">6</p>
+                            </div>
+                        </a>
+                        <a href="completed.html" class="block">
+                            <div class="bg-gradient-to-br from-[#f59e0b] to-[#ea580c] rounded-2xl p-6 shadow-lg transform hover:scale-105 transition-transform duration-300 cursor-pointer">
+                                <h2 class="text-lg font-semibold text-white">Subjects Completed</h2>
+                                <p class="text-5xl font-extrabold text-white mt-2" id="subjects-completed">0</p>
+                            </div>
+                        </a>
+                        <a href="quiz.html" class="block">
+                            <div class="bg-gradient-to-br from-[#60a5fa] to-[#2563eb] rounded-2xl p-6 shadow-lg transform hover:scale-105 transition-transform duration-300 cursor-pointer">
+                                <h2 class="text-lg font-semibold text-white">Total Quizzes Taken</h2>
+                                <p class="text-5xl font-extrabold text-white mt-2" id="total-quizzes">0</p>
+                            </div>
+                        </a>
+                    </div>
+                    <a href="progress.html" class="block">
+                        <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-100">
+                            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Your Progress (Introduction to Web Development)</h2>
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="text-lg font-medium text-gray-700">HTML & CSS Fundamentals</div>
+                                <div class="text-sm font-bold text-[#14b8a6]" id="progress-percent">0% Complete</div>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3.5">
+                                <div class="bg-[#14b8a6] h-3.5 rounded-full" id="progress-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </section>
+            <section id="courses" class="page-section hidden p-8 bg-white rounded-3xl shadow-2xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-6">All Subjects</h1>
+                <div id="course-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 scrollbar-custom overflow-y-auto max-h-[80vh]"></div>
+            </section>
+            <section id="course-detail" class="page-section hidden p-8 bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6">
+                <div id="course-sidebar" class="md:w-1/4 bg-[#f0fdfa] rounded-2xl p-6 shadow-md flex-shrink-0">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Course Content</h2>
+                    <ul id="course-pages-list" class="space-y-2"></ul>
+                </div>
+                <div id="course-main-content" class="md:w-3/4 flex-grow bg-[#f0fdfa] rounded-2xl p-6 shadow-md overflow-y-auto"></div>
+            </section>
+            <section id="quizzes" class="page-section hidden p-8 bg-white rounded-3xl shadow-2xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-6">Quizzes</h1>
+                <div id="quiz-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+            <section id="notes" class="page-section hidden p-8 bg-white rounded-3xl shadow-2xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-6">Your Notes</h1>
+                <textarea id="notes-textarea" class="w-full h-96 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#14b8a6] focus:outline-none transition-all duration-200" placeholder="Start writing your notes here..."></textarea>
+                <div class="mt-4 text-sm text-gray-500">
+                    Notes are automatically saved to your browser.
+                </div>
+            </section>
+            <section id="profile" class="page-section hidden p-8 bg-white rounded-3xl shadow-2xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-6">User Profile</h1>
+                <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8">
+                    <div class="w-32 h-32 md:w-40 md:h-40 rounded-full ring-4 ring-[#14b8a6] overflow-hidden flex-shrink-0 shadow-lg">
+                        <img id="profile-picture" src="https://ui-avatars.com/api/?name=U+S&background=14b8a6&color=fff" alt="User Profile Picture" class="w-full h-full object-cover">
+                    </div>
+                    <div class="text-center md:text-left">
+                        <h2 id="profile-name" class="text-2xl font-bold text-gray-900"></h2>
+                        <p id="profile-email" class="text-gray-600"></p>
+                        <p class="text-gray-500 mt-2">Joined: January 2023</p>
+                        <button id="edit-profile-btn" class="mt-4 px-6 py-2 bg-[#f59e0b] text-white font-semibold rounded-full shadow-lg hover:bg-[#ea580c] transform hover:scale-105 transition-transform duration-200">Edit Profile</button>
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Enrolled Subjects</h2>
+                    <ul id="enrolled-subjects" class="space-y-2"></ul>
+                </div>
+                <div class="mt-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Quiz History</h2>
+                    <ul id="quiz-history" class="space-y-2"></ul>
+                </div>
+            </section>
+            <section id="chat" class="page-section hidden p-8 bg-white rounded-3xl shadow-2xl flex flex-col h-full">
+                <h1 class="text-3xl font-bold text-gray-900 mb-6">EduChat</h1>
+                <div id="chat-messages" class="flex-grow overflow-y-auto scrollbar-custom space-y-4 p-2"></div>
+                <form id="chat-form" class="mt-4 flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="Type a message..." class="flex-grow p-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#14b8a6] focus:outline-none transition-all duration-200">
+                    <button type="submit" class="p-3 bg-[#14b8a6] text-white rounded-full shadow-lg hover:bg-[#0d9488] transform hover:scale-105 transition-transform duration-200">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </button>
+                </form>
+            </section>
+        </main>
+    </div>
+    <div id="videoModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50" role="dialog" aria-labelledby="video-title" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden relative">
+            <button id="closeVideoModal" class="absolute top-4 right-4 text-gray-600 hover:text-gray-900 z-10" aria-label="Close video modal">
+                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div id="video-container" class="relative pt-[56.25%] bg-black"></div>
+            <div class="p-6">
+                <h3 id="video-title" class="text-xl font-bold text-gray-900"></h3>
+            </div>
+        </div>
+    </div>
+    <div id="alertModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50" role="dialog" aria-labelledby="alert-title" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+            <h3 id="alert-title" class="text-2xl font-bold mb-4"></h3>
+            <p id="alert-message" class="text-gray-700 mb-6"></p>
+            <button id="closeAlertModal" class="w-full py-2 bg-[#14b8a6] text-white font-semibold rounded-full shadow-lg hover:bg-[#0d9488]" aria-label="Close alert">OK</button>
+        </div>
+    </div>
+    <script src="data.js"></script>
+    <script>
+        function sanitizeInput(input) {
+            const div = document.createElement('div');
+            div.textContent = input;
+            return div.innerHTML;
+        }
+
+        const showAlert = (title, message) => {
+            const alertTitleEl = document.getElementById('alert-title');
+            const alertMessageEl = document.getElementById('alert-message');
+            const alertModalEl = document.getElementById('alertModal');
+            if (alertTitleEl) alertTitleEl.innerText = title;
+            if (alertMessageEl) alertMessageEl.innerText = message;
+            if (alertModalEl) alertModalEl.classList.remove('hidden');
+            trapFocus(alertModalEl);
+            const closeBtn = document.getElementById('closeAlertModal');
+            if (closeBtn) closeBtn.focus();
+        };
+
+        const hideAlert = () => {
+            const alertModalEl = document.getElementById('alertModal');
+            if (alertModalEl) alertModalEl.classList.add('hidden');
+        };
+
+        const getUrlParams = () => {
+            const params = new URLSearchParams(window.location.search);
+            const result = {};
+            for (const [key, value] of params) {
+                result[key] = value;
+            }
+            return result;
+        };
+
+        function trapFocus(modal) {
+            if (!modal) return;
+            const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (!focusableElements.length) return;
+            const firstFocusable = focusableElements[0];
+            const lastFocusable = focusableElements[focusableElements.length - 1];
+
+            modal.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') {
+                    if (e.shiftKey && document.activeElement === firstFocusable) {
+                        e.preventDefault();
+                        lastFocusable.focus();
+                    } else if (!e.shiftKey && document.activeElement === lastFocusable) {
+                        e.preventDefault();
+                        firstFocusable.focus();
+                    }
+                }
+            });
+        }
+
+        let currentPage = 'dashboard';
+        let loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        let userEmail = localStorage.getItem('userEmail') || '';
+        let userName = localStorage.getItem('userName') || '';
+        let currentQuiz = null;
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+
+        const mainApp = document.getElementById('main-app');
+        const courseListContainer = document.getElementById('course-list');
+        const courseDetailSection = document.getElementById('course-detail');
+        const courseMainContent = document.getElementById('course-main-content');
+        const coursePagesList = document.getElementById('course-pages-list');
+        const videoModal = document.getElementById('videoModal');
+        const videoContainer = document.getElementById('video-container');
+        const videoTitle = document.getElementById('video-title');
+        const closeVideoModal = document.getElementById('closeVideoModal');
+        const profileNameEl = document.getElementById('profile-name');
+        const profileEmailEl = document.getElementById('profile-email');
+        const profilePictureEl = document.getElementById('profile-picture');
+        const editProfileBtn = document.getElementById('edit-profile-btn');
+        const notesTextarea = document.getElementById('notes-textarea');
+        const quizListContainer = document.getElementById('quiz-list');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const enrolledSubjects = document.getElementById('enrolled-subjects');
+        const quizHistory = document.getElementById('quiz-history');
+        const totalQuizzesEl = document.getElementById('total-quizzes');
+        const progressPercentEl = document.getElementById('progress-percent');
+        const progressBarEl = document.getElementById('progress-bar');
+        const subjectsEnrolledEl = document.getElementById('subjects-enrolled');
+        const subjectsCompletedEl = document.getElementById('subjects-completed');
+        const alertModal = document.getElementById('alertModal');
+        const closeAlertModal = document.getElementById('closeAlertModal');
+
+        const renderCourseCards = () => {
+            if (!courseListContainer) return;
+            courseListContainer.innerHTML = courses.map(course => `
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 cursor-pointer course-card" data-course-id="${course.id}">
+                    <img src="${course.image}" alt="${course.title}" class="w-full h-40 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">${course.title}</h3>
+                        <p class="text-gray-600 text-sm mb-4">${course.description}</p>
+                        <div class="text-sm text-gray-500">Instructor: ${course.instructor}</div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        if (courseListContainer) {
+            courseListContainer.addEventListener('click', (e) => {
+                const card = e.target.closest('.course-card');
+                if (card) {
+                    const courseId = parseInt(card.dataset.courseId);
+                    const course = courses.find(c => c.id === courseId);
+                    if (course) {
+                        renderCourseDetail(course);
+                    }
+                }
+            });
+        }
+
+        const renderQuizCards = () => {
+            if (!quizListContainer) return;
+            quizListContainer.innerHTML = quizzes.map(quiz => `
+                <div class="bg-white rounded-2xl shadow-lg p-6 transform hover:scale-105 transition-transform duration-300 cursor-pointer quiz-card" data-quiz-id="${quiz.id}">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">${quiz.title}</h3>
+                    <p class="text-gray-600 text-sm">Test your knowledge with this quick quiz.</p>
+                </div>
+            `).join('');
+        };
+
+        if (quizListContainer) {
+            quizListContainer.addEventListener('click', (e) => {
+                const card = e.target.closest('.quiz-card');
+                if (card) {
+                    const quizId = parseInt(card.dataset.quizId);
+                    const quiz = quizzes.find(q => q.id === quizId);
+                    if (quiz) {
+                        startQuiz(quiz);
+                    }
+                }
+            });
+        }
+
+        const renderCourseDetail = (course) => {
+            history.pushState(null, '', `?page=course-detail&courseId=${course.id}`);
+            if (!coursePagesList) return;
+            coursePagesList.innerHTML = course.pages.map(page => `
+                <li class="page-link cursor-pointer flex items-center p-2 text-gray-700 hover:bg-[#e0f2f1] hover:text-[#14b8a6] rounded-xl transition-all duration-200" data-page-id="${page.id}" data-course-id="${course.id}">
+                    <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>${page.title}</span>
+                </li>
+            `).join('');
+
+            if (coursePagesList) {
+                coursePagesList.addEventListener('click', function pageLinkHandler(ev) {
+                    const link = ev.target.closest('.page-link');
+                    if (!link) return;
+                    const pageId = parseInt(link.dataset.pageId);
+                    const courseId = parseInt(link.dataset.courseId);
+                    const courseObj = courses.find(c => c.id === courseId);
+                    if (!courseObj) return;
+                    const page = courseObj.pages.find(p => p.id === pageId);
+                    if (page) {
+                        history.pushState(null, '', `?page=course-detail&courseId=${courseId}&lessonId=${pageId}`);
+                        renderCoursePage(page);
+                    }
+                }, { once: false });
+            }
+
+            if (course.pages.length > 0) {
+                renderCoursePage(course.pages[0]);
+            }
+
+            showPage('course-detail');
+        };
+
+        const renderCoursePage = (page) => {
+            if (!courseMainContent) return;
+            courseMainContent.innerHTML = `
+                <div class="p-6 bg-white rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">${page.title}</h2>
+                    <button class="bg-[#f59e0b] text-white px-4 py-2 rounded-full font-semibold mb-6 hover:bg-[#ea580c] transition-colors duration-200" id="watch-video-btn">
+                        <svg class="w-5 h-5 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197 2.132A1 1 0 0110 13.168V8.832a1 1 0 011.555-.832l3.197 2.132a1 1 0 010 1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Watch Video
+                    </button>
+                    <button class="bg-[#14b8a6] text-white px-4 py-2 rounded-full font-semibold mb-6 ml-4" id="mark-complete-btn">Mark as Complete</button>
+                    <div class="text-gray-700 leading-relaxed">${page.content}</div>
+                </div>
+            `;
+
+            const watchBtn = document.getElementById('watch-video-btn');
+            if (watchBtn) {
+                watchBtn.addEventListener('click', () => showVideo(page.videoUrl, page.title));
+            }
+            const markBtn = document.getElementById('mark-complete-btn');
+            if (markBtn) {
+                markBtn.addEventListener('click', () => markLessonComplete(page.courseId, page.id));
+            }
+        };
+
+        const startQuiz = (quiz) => {
+            currentQuiz = quiz;
+            currentQuestionIndex = 0;
+            userAnswers = new Array(quiz.questions.length).fill(null);
+            history.pushState(null, '', `?page=quiz&quizId=${quiz.id}`);
+            renderCurrentQuestion();
+            showPage('quizzes');
+        };
+
+        const renderCurrentQuestion = () => {
+            const quizSection = document.getElementById('quizzes');
+            if (!quizSection || !currentQuiz) return;
+            const q = currentQuiz.questions[currentQuestionIndex];
+
+            let quizHtml = `
+                <h1 class="text-3xl font-bold text-gray-900 mb-6">${currentQuiz.title} - Question ${currentQuestionIndex + 1}/${currentQuiz.questions.length}</h1>
+                <div class="bg-white rounded-2xl p-6 shadow-md mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">${q.question}</h3>
+                    <div class="space-y-3" id="options-container">
+                        ${q.options.map((option, optIndex) => `
+                            <label class="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200">
+                                <input type="radio" name="question-${currentQuestionIndex}" value="${option}" data-opt-index="${optIndex}" class="text-[#14b8a6] focus:ring-[#14b8a6]">
+                                <span class="text-gray-800">${option}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+                <button id="next-question-btn" class="w-full py-3 bg-[#14b8a6] text-white font-semibold rounded-full shadow-lg hover:bg-[#0d9488] transform hover:scale-105 transition-transform duration-200 mt-4">
+                    ${currentQuestionIndex < currentQuiz.questions.length - 1 ? 'Next Question' : 'Submit Quiz'}
+                </button>
+            `;
+
+            quizSection.innerHTML = quizHtml;
+
+            document.querySelectorAll(`input[name="question-${currentQuestionIndex}"]`).forEach(input => {
+                input.addEventListener('change', (e) => {
+                    userAnswers[currentQuestionIndex] = e.target.value;
+                });
+            });
+
+            const nextBtn = document.getElementById('next-question-btn');
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    if (userAnswers[currentQuestionIndex] !== null) {
+                        if (currentQuestionIndex < currentQuiz.questions.length - 1) {
+                            currentQuestionIndex++;
+                            renderCurrentQuestion();
+                        } else {
+                            calculateQuizScore();
+                        }
+                    } else {
+                        showAlert('Select Answer', 'Please select an answer before proceeding.');
+                    }
+                });
+            }
+        };
+
+        const calculateQuizScore = () => {
+            let score = 0;
+            currentQuiz.questions.forEach((q, index) => {
+                if (userAnswers[index] === q.answer) {
+                    score++;
+                }
+            });
+
+            const totalQuestions = currentQuiz.questions.length;
+            const percentage = (score / totalQuestions) * 100;
+
+            saveQuizResult(currentQuiz.id, score, totalQuestions);
+
+            showAlert(
+                'Quiz Complete!',
+                `You scored ${score} out of ${totalQuestions} (${percentage.toFixed(0)}%).`
+            );
+
+            updateDashboardStats();
+            quizListContainer.innerHTML = '';
+            renderQuizCards();
+            showPage('quizzes');
+        };
+
+        const showVideo = (url, title) => {
+            if (!videoContainer || !videoModal || !videoTitle) return;
+            videoContainer.innerHTML = `
+                <iframe class="absolute top-0 left-0 w-full h-full rounded-2xl"
+                    src="${url}" frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+            `;
+            videoTitle.innerText = title;
+            videoModal.classList.remove('hidden');
+            setTimeout(() => trapFocus(videoModal), 0);
+        };
+
+        const showPage = (pageId) => {
+            document.querySelectorAll('.page-section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            const target = document.getElementById(pageId);
+            if (target) target.classList.remove('hidden');
+            currentPage = pageId;
+            if (pageId === 'profile') {
+                renderProfileDetails();
+            }
+            if (pageId === 'quizzes') {
+                if (!currentQuiz) {
+                    quizListContainer.innerHTML = '';
+                    renderQuizCards();
+                } else {
+                    renderCurrentQuestion();
+                }
+            }
+            if (pageId === 'courses') {
+                courseListContainer.innerHTML = '';
+                renderCourseCards();
+            }
+        };
+
+        const generateProfilePicture = (name) => {
+            const initials = name.split(' ').map(n => n[0] || '').join('').toUpperCase();
+            return `https://ui-avatars.com/api/?name=${initials}&background=14b8a6&color=fff`;
+        };
+
+        const updateProfileInfo = (name, email) => {
+            userName = name;
+            userEmail = email;
+            localStorage.setItem('userName', userName);
+            localStorage.setItem('userEmail', userEmail);
+            if (profileNameEl) profileNameEl.innerText = userName;
+            if (profileEmailEl) profileEmailEl.innerText = userEmail;
+            if (profilePictureEl) profilePictureEl.src = generateProfilePicture(userName);
+        };
+
+        const renderProfileDetails = () => {
+            if (enrolledSubjects) {
+                enrolledSubjects.innerHTML = courses.map(course => `
+                    <li class="p-2 bg-[#e0f2f1] rounded-xl text-gray-800">${course.title}</li>
+                `).join('');
+            }
+
+            const results = JSON.parse(localStorage.getItem('quizResults') || '{}');
+            if (quizHistory) {
+                quizHistory.innerHTML = '';
+                for (const quizId in results) {
+                    const quiz = quizzes.find(q => q.id === parseInt(quizId));
+                    if (quiz) {
+                        const { score, totalQuestions } = results[quizId];
+                        quizHistory.innerHTML += `
+                            <li class="p-2 bg-[#e0f2f1] rounded-xl text-gray-800">${quiz.title}: ${score}/${totalQuestions}</li>
+                        `;
+                    }
+                }
+                if (quizHistory.innerHTML === '') {
+                    quizHistory.innerHTML = '<li class="p-2 text-gray-600">No quizzes taken yet.</li>';
+                }
+            }
+        };
+
+        const markLessonComplete = (courseId, lessonId) => {
+            const progress = JSON.parse(localStorage.getItem('courseProgress') || '{}');
+            if (!progress[courseId]) progress[courseId] = [];
+            if (!progress[courseId].includes(lessonId)) {
+                progress[courseId].push(lessonId);
+            }
+            localStorage.setItem('courseProgress', JSON.stringify(progress));
+            updateDashboardStats();
+        };
+
+        const saveQuizResult = (quizId, score, totalQuestions) => {
+            const results = JSON.parse(localStorage.getItem('quizResults') || '{}');
+            results[quizId] = { score, totalQuestions, timestamp: new Date().toISOString() };
+            localStorage.setItem('quizResults', JSON.stringify(results));
+        };
+
+        const updateDashboardStats = () => {
+            const progress = JSON.parse(localStorage.getItem('courseProgress') || '{}');
+            const results = JSON.parse(localStorage.getItem('quizResults') || '{}');
+
+            // Subjects Enrolled
+            if (subjectsEnrolledEl) {
+                subjectsEnrolledEl.innerText = courses.length;
+            }
+
+            // Subjects Completed
+            let completedCourses = 0;
+            courses.forEach(course => {
+                const completedLessons = progress[course.id]?.length || 0;
+                const totalLessons = course.pages.length;
+                if (completedLessons >= totalLessons) {
+                    completedCourses++;
+                }
+            });
+            if (subjectsCompletedEl) {
+                subjectsCompletedEl.innerText = completedCourses;
+            }
+
+            // Total Quizzes
+            const totalQuizzes = Object.keys(results).length;
+            if (totalQuizzesEl) {
+                totalQuizzesEl.innerText = totalQuizzes || 0;
+
+                // Progress for first course
+                const courseId = 1;
+                const completedLessons = progress[courseId]?.length || 0;
+                const totalLessons = courses.find(c => c.id === courseId)?.pages.length || 1;
+                const percentage = (completedLessons / totalLessons) * 100;
+                if (progressBarEl) progressBarEl.style.width = `${percentage}%`;
+                if (progressPercentEl) progressPercentEl.innerText = `${percentage.toFixed(0)}% Complete`;
+            }
+        };
+
+        if (editProfileBtn) {
+            editProfileBtn.addEventListener('click', () => {
+                const newName = prompt('Enter your new profile name:', userName);
+                if (newName && newName.trim() !== '') {
+                    updateProfileInfo(sanitizeInput(newName.trim()), userEmail);
+                    showAlert('Profile Updated', 'Your profile name has been successfully changed!');
+                }
+            });
+        }
+
+        const logoutLink = document.getElementById('logout-link');
+        if (logoutLink) {
+            logoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userEmail');
+                window.location.href = 'index.html';
+            });
+        }
+
+        if (notesTextarea) {
+            const savedNotes = localStorage.getItem('notes');
+            if (savedNotes) {
+                notesTextarea.value = savedNotes;
+            }
+            notesTextarea.addEventListener('input', () => {
+                localStorage.setItem('notes', notesTextarea.value);
+            });
+        }
+
+        if (chatForm) {
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (!chatInput) return;
+                const messageText = sanitizeInput(chatInput.value.trim()).toLowerCase();
+                if (messageText) {
+                    const userMessage = document.createElement('div');
+                    userMessage.className = 'flex justify-end';
+                    userMessage.innerHTML = `<div class="bg-[#4fd1c5] text-white p-3 rounded-xl rounded-br-none max-w-sm">${messageText}</div>`;
+                    if (chatMessages) chatMessages.appendChild(userMessage);
+
+                    let response = "I'm here to help with educational queries! Can you be more specific?";
+                    if (messageText.includes('html') || messageText.includes('css')) {
+                        response = "HTML is the structure of web pages, while CSS handles the styling. What specific question do you have about them?";
+                    } else if (messageText.includes('python')) {
+                        response = "Python is a versatile programming language great for beginners. Do you need help with syntax or concepts?";
+                    } else if (messageText.includes('quiz') || messageText.includes('test')) {
+                        response = "You can take quizzes in the Quizzes section. Which subject are you interested in?";
+                    } else if (messageText.includes('course') || messageText.includes('subject')) {
+                        response = "We have courses on Web Development, Python, Digital Marketing, and more. Check the Subjects section!";
+                    } else if (messageText.includes('hello') || messageText.includes('hi')) {
+                        response = "Hello! How can I assist you with your learning today?";
+                    }
+
+                    setTimeout(() => {
+                        const aiMessage = document.createElement('div');
+                        aiMessage.className = 'flex justify-start';
+                        aiMessage.innerHTML = `<div class="bg-gray-100 text-gray-800 p-3 rounded-xl rounded-bl-none max-w-sm">${response}</div>`;
+                        if (chatMessages) {
+                            chatMessages.appendChild(aiMessage);
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+                    }, 500);
+
+                    chatInput.value = '';
+                    if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            });
+        }
+
+        if (closeVideoModal) {
+            closeVideoModal.addEventListener('click', () => {
+                if (videoModal) videoModal.classList.add('hidden');
+                if (videoContainer) videoContainer.innerHTML = '';
+            });
+        }
+
+        if (closeAlertModal) {
+            closeAlertModal.addEventListener('click', hideAlert);
+        }
+
+        if (videoModal) {
+            videoModal.addEventListener('transitionend', () => {
+                if (!videoModal.classList.contains('hidden')) {
+                    trapFocus(videoModal);
+                    const closeBtn = document.getElementById('closeVideoModal');
+                    if (closeBtn) closeBtn.focus();
+                }
+            });
+        }
+
+        if (alertModal) {
+            alertModal.addEventListener('transitionend', () => {
+                if (!alertModal.classList.contains('hidden')) {
+                    trapFocus(alertModal);
+                    const closeBtn = document.getElementById('closeAlertModal');
+                    if (closeBtn) closeBtn.focus();
+                }
+            });
+        }
+
+        const asideEl = document.querySelector('aside');
+        if (asideEl) {
+            asideEl.addEventListener('click', (e) => {
+                const link = e.target.closest('a');
+                if (link) {
+                    const pageId = link.dataset.page;
+                    if (pageId && loggedIn) {
+                        e.preventDefault();
+                        showPage(pageId);
+                        history.pushState(null, '', `?page=${pageId}`);
+                    }
+                }
+            });
+        }
+
+        window.addEventListener('popstate', () => {
+            const params = getUrlParams();
+            const page = params.page || 'dashboard';
+            if (loggedIn) {
+                if (page === 'course-detail') {
+                    const courseId = parseInt(params.courseId);
+                    const course = courses.find(c => c.id === courseId);
+                    if (course) {
+                        renderCourseDetail(course);
+                        const lessonId = parseInt(params.lessonId);
+                        const lesson = course.pages.find(p => p.id === lessonId);
+                        if (lesson) {
+                            renderCoursePage(lesson);
+                        } else {
+                            renderCoursePage(course.pages[0]);
+                        }
+                    } else {
+                        showPage('dashboard');
+                    }
+                } else if (page === 'quiz') {
+                    const quizId = parseInt(params.quizId);
+                    const quiz = quizzes.find(q => q.id === quizId);
+                    if (quiz) {
+                        startQuiz(quiz);
+                    } else {
+                        showPage('quizzes');
+                    }
+                } else {
+                    showPage(page);
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        (function init() {
+            if (!loggedIn) {
+                window.location.href = 'login.html';
+                return;
+            }
+            const params = getUrlParams();
+            const initialPage = params.page || 'dashboard';
+            updateProfileInfo(userName, userEmail);
+            if (initialPage === 'course-detail') {
+                const courseId = parseInt(params.courseId);
+                const course = courses.find(c => c.id === courseId);
+                if (course) {
+                    renderCourseDetail(course);
+                    const lessonId = parseInt(params.lessonId);
+                    const lesson = course.pages.find(p => p.id === lessonId);
+                    if (lesson) {
+                        renderCoursePage(lesson);
+                    }
+                } else {
+                    showPage('dashboard');
+                }
+            } else if (initialPage === 'quiz') {
+                const quizId = parseInt(params.quizId);
+                const quiz = quizzes.find(q => q.id === quizId);
+                if (quiz) {
+                    startQuiz(quiz);
+                } else {
+                    showPage('quizzes');
+                }
+            } else {
+                showPage(initialPage);
+            }
+            updateDashboardStats();
+        })();
+    </script>
+</body>
+</html>
