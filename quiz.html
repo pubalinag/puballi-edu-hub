@@ -11,17 +11,29 @@
   <h1 class="text-4xl font-bold mb-6">Total Quizzes Taken</h1>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-    <div class="bg-white p-6 rounded-2xl shadow-lg text-center">
-      <h2 class="text-xl font-semibold">HTML & CSS Quiz</h2>
-      <p class="mt-2 text-gray-600">Score: 0/10</p>
+    
+    <!-- Quiz Taken -->
+    <div class="bg-blue-100 p-6 rounded-2xl shadow-lg text-center border-l-4 border-blue-700">
+      <h2 class="text-xl font-semibold text-blue-800">HTML & CSS Quiz</h2>
+      <p class="mt-2 text-gray-700 font-medium">Score: 4/6 ✅</p>
+      <p class="mt-1 text-sm text-gray-600">Completed on: 27th Aug 2025</p>
     </div>
-    <div class="bg-white p-6 rounded-2xl shadow-lg text-center">
-      <h2 class="text-xl font-semibold">JavaScript Quiz</h2>
+
+    <!-- Quiz Not Taken -->
+    <div class="bg-white p-6 rounded-2xl shadow-lg text-center opacity-70">
+      <h2 class="text-xl font-semibold text-gray-700">JavaScript Quiz</h2>
       <p class="mt-2 text-gray-600">Score: 0/10</p>
+      <p class="mt-1 text-sm text-gray-400">Not attempted yet</p>
     </div>
+
   </div>
 
-  <a href="home.html" class="mt-8 text-blue-600 font-semibold hover:underline">Back to Dashboard</a>
+  <!-- Back Button styled same as blue theme -->
+  <a href="home.html" 
+     class="mt-8 inline-block px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl shadow-md hover:bg-blue-600 transition">
+     Back to Dashboard
+  </a>
 
 </body>
 </html>
+
