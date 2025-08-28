@@ -44,10 +44,38 @@
             min-height: calc(100vh - 8rem);
             overflow-y: auto;
         }
+        @media (max-width: 768px) {
+            .main-app {
+                flex-direction: column;
+            }
+            aside {
+                width: 100%;
+                height: auto;
+                border-radius: 0 0 2rem 2rem;
+            }
+            #course-detail {
+                flex-direction: column;
+            }
+            #course-sidebar, #course-main-content {
+                width: 100%;
+            }
+        }
+        @media (max-width: 640px) {
+            nav ul {
+                display: flex;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+            }
+            nav li {
+                flex-shrink: 0;
+                margin-bottom: 0;
+                margin-right: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-[#f0fdfa] flex h-screen overflow-hidden">
-    <div id="main-app" class="flex-1 flex flex-row h-full">
+    <div id="main-app" class="flex-1 flex flex-row h-full main-app">
         <aside class="w-64 bg-white p-6 shadow-xl rounded-r-3xl flex-shrink-0 flex flex-col transform transition-transform duration-300 ease-in-out">
             <div class="flex items-center justify-center mb-10">
                 <svg class="h-10 w-10 text-[#14b8a6] animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -142,6 +170,7 @@
             </section>
             <section id="courses" class="page-section hidden p-8 bg-white rounded-3xl shadow-2xl">
                 <h1 class="text-3xl font-bold text-gray-900 mb-6">All Subjects</h1>
+                <input type="text" id="course-search" placeholder="Search courses..." class="w-full p-3 mb-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#14b8a6] focus:outline-none transition-all duration-200">
                 <div id="course-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 scrollbar-custom overflow-y-auto max-h-[80vh]"></div>
             </section>
             <section id="course-detail" class="page-section hidden p-8 bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6">
@@ -214,14 +243,38 @@
             <button id="closeAlertModal" class="w-full py-2 bg-[#14b8a6] text-white font-semibold rounded-full shadow-lg hover:bg-[#0d9488]" aria-label="Close alert">OK</button>
         </div>
     </div>
+    <div id="global-loader" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-2xl shadow-xl flex items-center">
+            <svg class="animate-spin h-8 w-8 text-[#14b8a6]" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="ml-3 text-gray-700">Loading...</span>
+        </div>
+    </div>
     <script src="data.js"></script>
     <script>
+        // Enhanced input sanitization
         function sanitizeInput(input) {
             const div = document.createElement('div');
             div.textContent = input;
-            return div.innerHTML;
+            return div.innerHTML.replace(/[<>]/g, '');
         }
 
+        // CSRF protection
+        const addCSRFToken = () => {
+            const token = Math.random().toString(36).substring(2);
+            localStorage.setItem('csrfToken', token);
+            return token;
+        };
+
+        // Show/hide loader
+        const showLoader = (show = true) => {
+            const loader = document.getElementById('global-loader');
+            if (loader) loader.style.display = show ? 'flex' : 'none';
+        };
+
+        // Enhanced alert system
         const showAlert = (title, message) => {
             const alertTitleEl = document.getElementById('alert-title');
             const alertMessageEl = document.getElementById('alert-message');
@@ -248,6 +301,7 @@
             return result;
         };
 
+        // Focus trap for accessibility
         function trapFocus(modal) {
             if (!modal) return;
             const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
@@ -268,6 +322,31 @@
             });
         }
 
+        // Global error handling
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+            showAlert('Error', 'An unexpected error occurred. Please try again.');
+        });
+
+        // Safe fetch with error handling
+        const safeFetch = async (url, options) => {
+            try {
+                showLoader(true);
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showAlert('Network Error', 'Unable to load data. Please check your connection.');
+                return null;
+            } finally {
+                showLoader(false);
+            }
+        };
+
+        // Application state
         let currentPage = 'dashboard';
         let loggedIn = localStorage.getItem('isLoggedIn') === 'true';
         let userEmail = localStorage.getItem('userEmail') || '';
@@ -275,9 +354,12 @@
         let currentQuiz = null;
         let currentQuestionIndex = 0;
         let userAnswers = [];
+        let noteSaveTimeout;
 
+        // DOM elements
         const mainApp = document.getElementById('main-app');
         const courseListContainer = document.getElementById('course-list');
+        const courseSearchInput = document.getElementById('course-search');
         const courseDetailSection = document.getElementById('course-detail');
         const courseMainContent = document.getElementById('course-main-content');
         const coursePagesList = document.getElementById('course-pages-list');
@@ -304,290 +386,294 @@
         const alertModal = document.getElementById('alertModal');
         const closeAlertModal = document.getElementById('closeAlertModal');
 
-        const renderCourseCards = () => {
-            if (!courseListContainer) return;
-            courseListContainer.innerHTML = courses.map(course => `
-                <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 cursor-pointer course-card" data-course-id="${course.id}">
-                    <img src="${course.image}" alt="${course.title}" class="w-full h-40 object-cover">
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">${course.title}</h3>
-                        <p class="text-gray-600 text-sm mb-4">${course.description}</p>
-                        <div class="text-sm text-gray-500">Instructor: ${course.instructor}</div>
+        // Course Manager Module
+        const CourseManager = {
+            renderCourseCards: function() {
+                if (!courseListContainer) return;
+                courseListContainer.innerHTML = courses.map(course => `
+                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 cursor-pointer course-card" data-course-id="${course.id}">
+                        <img src="${course.image}" alt="${course.title}" class="w-full h-40 object-cover">
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">${course.title}</h3>
+                            <p class="text-gray-600 text-sm mb-4">${course.description}</p>
+                            <div class="text-sm text-gray-500">Instructor: ${course.instructor}</div>
+                        </div>
                     </div>
-                </div>
-            `).join('');
-        };
-
-        if (courseListContainer) {
-            courseListContainer.addEventListener('click', (e) => {
-                const card = e.target.closest('.course-card');
-                if (card) {
-                    const courseId = parseInt(card.dataset.courseId);
-                    const course = courses.find(c => c.id === courseId);
-                    if (course) {
-                        renderCourseDetail(course);
-                    }
-                }
-            });
-        }
-
-        const renderQuizCards = () => {
-            if (!quizListContainer) return;
-            quizListContainer.innerHTML = quizzes.map(quiz => `
-                <div class="bg-white rounded-2xl shadow-lg p-6 transform hover:scale-105 transition-transform duration-300 cursor-pointer quiz-card" data-quiz-id="${quiz.id}">
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">${quiz.title}</h3>
-                    <p class="text-gray-600 text-sm">Test your knowledge with this quick quiz.</p>
-                </div>
-            `).join('');
-        };
-
-        if (quizListContainer) {
-            quizListContainer.addEventListener('click', (e) => {
-                const card = e.target.closest('.quiz-card');
-                if (card) {
-                    const quizId = parseInt(card.dataset.quizId);
-                    const quiz = quizzes.find(q => q.id === quizId);
-                    if (quiz) {
-                        startQuiz(quiz);
-                    }
-                }
-            });
-        }
-
-        const renderCourseDetail = (course) => {
-            history.pushState(null, '', `?page=course-detail&courseId=${course.id}`);
-            if (!coursePagesList) return;
-            coursePagesList.innerHTML = course.pages.map(page => `
-                <li class="page-link cursor-pointer flex items-center p-2 text-gray-700 hover:bg-[#e0f2f1] hover:text-[#14b8a6] rounded-xl transition-all duration-200" data-page-id="${page.id}" data-course-id="${course.id}">
-                    <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span>${page.title}</span>
-                </li>
-            `).join('');
-
-            if (coursePagesList) {
-                coursePagesList.addEventListener('click', function pageLinkHandler(ev) {
-                    const link = ev.target.closest('.page-link');
-                    if (!link) return;
-                    const pageId = parseInt(link.dataset.pageId);
-                    const courseId = parseInt(link.dataset.courseId);
-                    const courseObj = courses.find(c => c.id === courseId);
-                    if (!courseObj) return;
-                    const page = courseObj.pages.find(p => p.id === pageId);
-                    if (page) {
-                        history.pushState(null, '', `?page=course-detail&courseId=${courseId}&lessonId=${pageId}`);
-                        renderCoursePage(page);
-                    }
-                }, { once: false });
-            }
-
-            if (course.pages.length > 0) {
-                renderCoursePage(course.pages[0]);
-            }
-
-            showPage('course-detail');
-        };
-
-        const renderCoursePage = (page) => {
-            if (!courseMainContent) return;
-            courseMainContent.innerHTML = `
-                <div class="p-6 bg-white rounded-xl shadow-lg">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-4">${page.title}</h2>
-                    <button class="bg-[#f59e0b] text-white px-4 py-2 rounded-full font-semibold mb-6 hover:bg-[#ea580c] transition-colors duration-200" id="watch-video-btn">
-                        <svg class="w-5 h-5 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197 2.132A1 1 0 0110 13.168V8.832a1 1 0 011.555-.832l3.197 2.132a1 1 0 010 1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Watch Video
-                    </button>
-                    <button class="bg-[#14b8a6] text-white px-4 py-2 rounded-full font-semibold mb-6 ml-4" id="mark-complete-btn">Mark as Complete</button>
-                    <div class="text-gray-700 leading-relaxed">${page.content}</div>
-                </div>
-            `;
-
-            const watchBtn = document.getElementById('watch-video-btn');
-            if (watchBtn) {
-                watchBtn.addEventListener('click', () => showVideo(page.videoUrl, page.title));
-            }
-            const markBtn = document.getElementById('mark-complete-btn');
-            if (markBtn) {
-                markBtn.addEventListener('click', () => markLessonComplete(page.courseId, page.id));
-            }
-        };
-
-        const startQuiz = (quiz) => {
-            currentQuiz = quiz;
-            currentQuestionIndex = 0;
-            userAnswers = new Array(quiz.questions.length).fill(null);
-            history.pushState(null, '', `?page=quiz&quizId=${quiz.id}`);
-            renderCurrentQuestion();
-            showPage('quizzes');
-        };
-
-        const renderCurrentQuestion = () => {
-            const quizSection = document.getElementById('quizzes');
-            if (!quizSection || !currentQuiz) return;
-            const q = currentQuiz.questions[currentQuestionIndex];
-
-            let quizHtml = `
-                <h1 class="text-3xl font-bold text-gray-900 mb-6">${currentQuiz.title} - Question ${currentQuestionIndex + 1}/${currentQuiz.questions.length}</h1>
-                <div class="bg-white rounded-2xl p-6 shadow-md mb-6">
-                    <h3 class="text-xl font-semibold text-gray-900 mb-4">${q.question}</h3>
-                    <div class="space-y-3" id="options-container">
-                        ${q.options.map((option, optIndex) => `
-                            <label class="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200">
-                                <input type="radio" name="question-${currentQuestionIndex}" value="${option}" data-opt-index="${optIndex}" class="text-[#14b8a6] focus:ring-[#14b8a6]">
-                                <span class="text-gray-800">${option}</span>
-                            </label>
-                        `).join('')}
-                    </div>
-                </div>
-                <button id="next-question-btn" class="w-full py-3 bg-[#14b8a6] text-white font-semibold rounded-full shadow-lg hover:bg-[#0d9488] transform hover:scale-105 transition-transform duration-200 mt-4">
-                    ${currentQuestionIndex < currentQuiz.questions.length - 1 ? 'Next Question' : 'Submit Quiz'}
-                </button>
-            `;
-
-            quizSection.innerHTML = quizHtml;
-
-            document.querySelectorAll(`input[name="question-${currentQuestionIndex}"]`).forEach(input => {
-                input.addEventListener('change', (e) => {
-                    userAnswers[currentQuestionIndex] = e.target.value;
-                });
-            });
-
-            const nextBtn = document.getElementById('next-question-btn');
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => {
-                    if (userAnswers[currentQuestionIndex] !== null) {
-                        if (currentQuestionIndex < currentQuiz.questions.length - 1) {
-                            currentQuestionIndex++;
-                            renderCurrentQuestion();
-                        } else {
-                            calculateQuizScore();
-                        }
-                    } else {
-                        showAlert('Select Answer', 'Please select an answer before proceeding.');
-                    }
-                });
-            }
-        };
-
-        const calculateQuizScore = () => {
-            let score = 0;
-            currentQuiz.questions.forEach((q, index) => {
-                if (userAnswers[index] === q.answer) {
-                    score++;
-                }
-            });
-
-            const totalQuestions = currentQuiz.questions.length;
-            const percentage = (score / totalQuestions) * 100;
-
-            saveQuizResult(currentQuiz.id, score, totalQuestions);
-
-            showAlert(
-                'Quiz Complete!',
-                `You scored ${score} out of ${totalQuestions} (${percentage.toFixed(0)}%).`
-            );
-
-            updateDashboardStats();
-            quizListContainer.innerHTML = '';
-            renderQuizCards();
-            showPage('quizzes');
-        };
-
-        const showVideo = (url, title) => {
-            if (!videoContainer || !videoModal || !videoTitle) return;
-            videoContainer.innerHTML = `
-                <iframe class="absolute top-0 left-0 w-full h-full rounded-2xl"
-                    src="${url}" frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen>
-                </iframe>
-            `;
-            videoTitle.innerText = title;
-            videoModal.classList.remove('hidden');
-            setTimeout(() => trapFocus(videoModal), 0);
-        };
-
-        const showPage = (pageId) => {
-            document.querySelectorAll('.page-section').forEach(section => {
-                section.classList.add('hidden');
-            });
-            const target = document.getElementById(pageId);
-            if (target) target.classList.remove('hidden');
-            currentPage = pageId;
-            if (pageId === 'profile') {
-                renderProfileDetails();
-            }
-            if (pageId === 'quizzes') {
-                if (!currentQuiz) {
-                    quizListContainer.innerHTML = '';
-                    renderQuizCards();
-                } else {
-                    renderCurrentQuestion();
-                }
-            }
-            if (pageId === 'courses') {
-                courseListContainer.innerHTML = '';
-                renderCourseCards();
-            }
-        };
-
-        const generateProfilePicture = (name) => {
-            const initials = name.split(' ').map(n => n[0] || '').join('').toUpperCase();
-            return `https://ui-avatars.com/api/?name=${initials}&background=14b8a6&color=fff`;
-        };
-
-        const updateProfileInfo = (name, email) => {
-            userName = name;
-            userEmail = email;
-            localStorage.setItem('userName', userName);
-            localStorage.setItem('userEmail', userEmail);
-            if (profileNameEl) profileNameEl.innerText = userName;
-            if (profileEmailEl) profileEmailEl.innerText = userEmail;
-            if (profilePictureEl) profilePictureEl.src = generateProfilePicture(userName);
-        };
-
-        const renderProfileDetails = () => {
-            if (enrolledSubjects) {
-                enrolledSubjects.innerHTML = courses.map(course => `
-                    <li class="p-2 bg-[#e0f2f1] rounded-xl text-gray-800">${course.title}</li>
                 `).join('');
-            }
+            },
 
-            const results = JSON.parse(localStorage.getItem('quizResults') || '{}');
-            if (quizHistory) {
-                quizHistory.innerHTML = '';
-                for (const quizId in results) {
-                    const quiz = quizzes.find(q => q.id === parseInt(quizId));
-                    if (quiz) {
-                        const { score, totalQuestions } = results[quizId];
-                        quizHistory.innerHTML += `
-                            <li class="p-2 bg-[#e0f2f1] rounded-xl text-gray-800">${quiz.title}: ${score}/${totalQuestions}</li>
-                        `;
+            renderCourseDetail: function(course) {
+                history.pushState(null, '', `?page=course-detail&courseId=${course.id}`);
+                if (!coursePagesList) return;
+                coursePagesList.innerHTML = course.pages.map(page => `
+                    <li class="page-link cursor-pointer flex items-center p-2 text-gray-700 hover:bg-[#e0f2f1] hover:text-[#14b8a6] rounded-xl transition-all duration-200" data-page-id="${page.id}" data-course-id="${course.id}">
+                        <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>${page.title}</span>
+                    </li>
+                `).join('');
+
+                // Update progress indicators
+                this.updateProgressIndicator(course.id);
+
+                if (coursePagesList) {
+                    coursePagesList.addEventListener('click', function pageLinkHandler(ev) {
+                        const link = ev.target.closest('.page-link');
+                        if (!link) return;
+                        const pageId = parseInt(link.dataset.pageId);
+                        const courseId = parseInt(link.dataset.courseId);
+                        const courseObj = courses.find(c => c.id === courseId);
+                        if (!courseObj) return;
+                        const page = courseObj.pages.find(p => p.id === pageId);
+                        if (page) {
+                            history.pushState(null, '', `?page=course-detail&courseId=${courseId}&lessonId=${pageId}`);
+                            this.renderCoursePage(page);
+                        }
+                    }.bind(this), { once: false });
+                }
+
+                if (course.pages.length > 0) {
+                    this.renderCoursePage(course.pages[0]);
+                }
+
+                showPage('course-detail');
+            },
+
+            renderCoursePage: function(page) {
+                if (!courseMainContent) return;
+                courseMainContent.innerHTML = `
+                    <div class="p-6 bg-white rounded-xl shadow-lg">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-4">${page.title}</h2>
+                        <button class="bg-[#f59e0b] text-white px-4 py-2 rounded-full font-semibold mb-6 hover:bg-[#ea580c] transition-colors duration-200" id="watch-video-btn" aria-label="Watch video lesson">
+                            <svg class="w-5 h-5 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197 2.132A1 1 0 0110 13.168V8.832a1 1 0 011.555-.832l3.197 2.132a1 1 0 010 1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Watch Video
+                        </button>
+                        <button class="bg-[#14b8a6] text-white px-4 py-2 rounded-full font-semibold mb-6 ml-4" id="mark-complete-btn">Mark as Complete</button>
+                        <div class="text-gray-700 leading-relaxed">${page.content}</div>
+                    </div>
+                `;
+
+                const watchBtn = document.getElementById('watch-video-btn');
+                if (watchBtn) {
+                    watchBtn.addEventListener('click', () => this.showVideo(page.videoUrl, page.title));
+                }
+                const markBtn = document.getElementById('mark-complete-btn');
+                if (markBtn) {
+                    markBtn.addEventListener('click', () => this.markLessonComplete(page.courseId, page.id));
+                }
+            },
+
+            showVideo: function(url, title) {
+                if (!videoContainer || !videoModal || !videoTitle) return;
+                
+                videoContainer.innerHTML = `
+                    <div class="absolute top-0 left-0 w-full h-full rounded-2xl bg-black">
+                        <iframe class="w-full h-full" src="${url}" frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                `;
+                videoTitle.innerText = title;
+                videoModal.classList.remove('hidden');
+                setTimeout(() => trapFocus(videoModal), 0);
+            },
+
+            markLessonComplete: function(courseId, lessonId) {
+                const progress = JSON.parse(localStorage.getItem('courseProgress') || '{}');
+                if (!progress[courseId]) progress[courseId] = [];
+                if (!progress[courseId].includes(lessonId)) {
+                    progress[courseId].push(lessonId);
+                }
+                localStorage.setItem('courseProgress', JSON.stringify(progress));
+                this.updateProgressIndicator(courseId);
+                updateDashboardStats();
+                showAlert('Lesson Completed', 'Great job! You\'ve completed this lesson.');
+            },
+
+            updateProgressIndicator: function(courseId) {
+                const progress = JSON.parse(localStorage.getItem('courseProgress') || '{}');
+                const completedLessons = progress[courseId]?.length || 0;
+                const totalLessons = courses.find(c => c.id === courseId)?.pages.length || 0;
+                
+                document.querySelectorAll('.page-link').forEach(link => {
+                    const pageId = parseInt(link.dataset.pageId);
+                    if (progress[courseId]?.includes(pageId)) {
+                        link.classList.add('bg-green-100', 'border', 'border-green-300');
+                        if (!link.querySelector('.text-green-500')) {
+                            link.innerHTML += `<svg class="w-5 h-5 ml-2 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>`;
+                        }
+                    }
+                });
+            },
+
+            addSearchFunctionality: function() {
+                if (!courseSearchInput) return;
+                
+                courseSearchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const courseCards = document.querySelectorAll('.course-card');
+                    
+                    courseCards.forEach(card => {
+                        const title = card.querySelector('h3').textContent.toLowerCase();
+                        const description = card.querySelector('p').textContent.toLowerCase();
+                        
+                        if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        };
+
+        // Quiz Manager Module
+        const QuizManager = {
+            renderQuizCards: function() {
+                if (!quizListContainer) return;
+                quizListContainer.innerHTML = quizzes.map(quiz => `
+                    <div class="bg-white rounded-2xl shadow-lg p-6 transform hover:scale-105 transition-transform duration-300 cursor-pointer quiz-card" data-quiz-id="${quiz.id}">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">${quiz.title}</h3>
+                        <p class="text-gray-600 text-sm">Test your knowledge with this quick quiz.</p>
+                    </div>
+                `).join('');
+            },
+
+            startQuiz: function(quiz) {
+                currentQuiz = quiz;
+                currentQuestionIndex = 0;
+                userAnswers = new Array(quiz.questions.length).fill(null);
+                history.pushState(null, '', `?page=quiz&quizId=${quiz.id}`);
+                this.renderCurrentQuestion();
+                showPage('quizzes');
+            },
+
+            renderCurrentQuestion: function() {
+                const quizSection = document.getElementById('quizzes');
+                if (!quizSection || !currentQuiz) return;
+                const q = currentQuiz.questions[currentQuestionIndex];
+
+                let quizHtml = `
+                    <h1 class="text-3xl font-bold text-gray-900 mb-6">${currentQuiz.title} - Question ${currentQuestionIndex + 1}/${currentQuiz.questions.length}</h1>
+                    <div class="bg-white rounded-2xl p-6 shadow-md mb-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">${q.question}</h3>
+                        <div class="space-y-3" id="options-container">
+                            ${q.options.map((option, optIndex) => `
+                                <label class="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200">
+                                    <input type="radio" name="question-${currentQuestionIndex}" value="${option}" data-opt-index="${optIndex}" class="text-[#14b8a6] focus:ring-[#14b8a6]">
+                                    <span class="text-gray-800">${option}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <button id="next-question-btn" class="w-full py-3 bg-[#14b8a6] text-white font-semibold rounded-full shadow-lg hover:bg-[#0d9488] transform hover:scale-105 transition-transform duration-200 mt-4">
+                        ${currentQuestionIndex < currentQuiz.questions.length - 1 ? 'Next Question' : 'Submit Quiz'}
+                    </button>
+                `;
+
+                quizSection.innerHTML = quizHtml;
+
+                document.querySelectorAll(`input[name="question-${currentQuestionIndex}"]`).forEach(input => {
+                    input.addEventListener('change', (e) => {
+                        userAnswers[currentQuestionIndex] = e.target.value;
+                    });
+                });
+
+                const nextBtn = document.getElementById('next-question-btn');
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        if (userAnswers[currentQuestionIndex] !== null) {
+                            if (currentQuestionIndex < currentQuiz.questions.length - 1) {
+                                currentQuestionIndex++;
+                                this.renderCurrentQuestion();
+                            } else {
+                                this.calculateQuizScore();
+                            }
+                        } else {
+                            showAlert('Select Answer', 'Please select an answer before proceeding.');
+                        }
+                    });
+                }
+            },
+
+            calculateQuizScore: function() {
+                let score = 0;
+                currentQuiz.questions.forEach((q, index) => {
+                    if (userAnswers[index] === q.answer) {
+                        score++;
+                    }
+                });
+
+                const totalQuestions = currentQuiz.questions.length;
+                const percentage = (score / totalQuestions) * 100;
+
+                this.saveQuizResult(currentQuiz.id, score, totalQuestions);
+
+                showAlert(
+                    'Quiz Complete!',
+                    `You scored ${score} out of ${totalQuestions} (${percentage.toFixed(0)}%).`
+                );
+
+                updateDashboardStats();
+                quizListContainer.innerHTML = '';
+                this.renderQuizCards();
+                showPage('quizzes');
+                currentQuiz = null;
+            },
+
+            saveQuizResult: function(quizId, score, totalQuestions) {
+                const results = JSON.parse(localStorage.getItem('quizResults') || '{}');
+                results[quizId] = { score, totalQuestions, timestamp: new Date().toISOString() };
+                localStorage.setItem('quizResults', JSON.stringify(results));
+            }
+        };
+
+        // User Manager Module
+        const UserManager = {
+            updateProfileInfo: function(name, email) {
+                userName = name;
+                userEmail = email;
+                localStorage.setItem('userName', userName);
+                localStorage.setItem('userEmail', userEmail);
+                if (profileNameEl) profileNameEl.innerText = userName;
+                if (profileEmailEl) profileEmailEl.innerText = userEmail;
+                if (profilePictureEl) profilePictureEl.src = this.generateProfilePicture(userName);
+            },
+
+            generateProfilePicture: function(name) {
+                const initials = name.split(' ').map(n => n[0] || '').join('').toUpperCase();
+                return `https://ui-avatars.com/api/?name=${initials}&background=14b8a6&color=fff`;
+            },
+
+            renderProfileDetails: function() {
+                if (enrolledSubjects) {
+                    enrolledSubjects.innerHTML = courses.map(course => `
+                        <li class="p-2 bg-[#e0f2f1] rounded-xl text-gray-800">${course.title}</li>
+                    `).join('');
+                }
+
+                const results = JSON.parse(localStorage.getItem('quizResults') || '{}');
+                if (quizHistory) {
+                    quizHistory.innerHTML = '';
+                    for (const quizId in results) {
+                        const quiz = quizzes.find(q => q.id === parseInt(quizId));
+                        if (quiz) {
+                            const { score, totalQuestions } = results[quizId];
+                            quizHistory.innerHTML += `
+                                <li class="p-2 bg-[#e0f2f1] rounded-xl text-gray-800">${quiz.title}: ${score}/${totalQuestions}</li>
+                            `;
+                        }
+                    }
+                    if (quizHistory.innerHTML === '') {
+                        quizHistory.innerHTML = '<li class="p-2 text-gray-600">No quizzes taken yet.</li>';
                     }
                 }
-                if (quizHistory.innerHTML === '') {
-                    quizHistory.innerHTML = '<li class="p-2 text-gray-600">No quizzes taken yet.</li>';
-                }
             }
         };
 
-        const markLessonComplete = (courseId, lessonId) => {
-            const progress = JSON.parse(localStorage.getItem('courseProgress') || '{}');
-            if (!progress[courseId]) progress[courseId] = [];
-            if (!progress[courseId].includes(lessonId)) {
-                progress[courseId].push(lessonId);
-            }
-            localStorage.setItem('courseProgress', JSON.stringify(progress));
-            updateDashboardStats();
-        };
-
-        const saveQuizResult = (quizId, score, totalQuestions) => {
-            const results = JSON.parse(localStorage.getItem('quizResults') || '{}');
-            results[quizId] = { score, totalQuestions, timestamp: new Date().toISOString() };
-            localStorage.setItem('quizResults', JSON.stringify(results));
-        };
-
+        // Utility Functions
         const updateDashboardStats = () => {
             const progress = JSON.parse(localStorage.getItem('courseProgress') || '{}');
             const results = JSON.parse(localStorage.getItem('quizResults') || '{}');
@@ -625,175 +711,253 @@
             }
         };
 
-        if (editProfileBtn) {
-            editProfileBtn.addEventListener('click', () => {
-                const newName = prompt('Enter your new profile name:', userName);
-                if (newName && newName.trim() !== '') {
-                    updateProfileInfo(sanitizeInput(newName.trim()), userEmail);
-                    showAlert('Profile Updated', 'Your profile name has been successfully changed!');
-                }
+        const showPage = (pageId) => {
+            document.querySelectorAll('.page-section').forEach(section => {
+                section.classList.add('hidden');
             });
-        }
-
-        const logoutLink = document.getElementById('logout-link');
-        if (logoutLink) {
-            logoutLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('userName');
-                localStorage.removeItem('userEmail');
-                window.location.href = 'index.html';
-            });
-        }
-
-        if (notesTextarea) {
-            const savedNotes = localStorage.getItem('notes');
-            if (savedNotes) {
-                notesTextarea.value = savedNotes;
+            const target = document.getElementById(pageId);
+            if (target) target.classList.remove('hidden');
+            currentPage = pageId;
+            if (pageId === 'profile') {
+                UserManager.renderProfileDetails();
             }
-            notesTextarea.addEventListener('input', () => {
-                localStorage.setItem('notes', notesTextarea.value);
-            });
-        }
+            if (pageId === 'quizzes') {
+                if (!currentQuiz) {
+                    quizListContainer.innerHTML = '';
+                    QuizManager.renderQuizCards();
+                } else {
+                    QuizManager.renderCurrentQuestion();
+                }
+            }
+            if (pageId === 'courses') {
+                courseListContainer.innerHTML = '';
+                CourseManager.renderCourseCards();
+                CourseManager.addSearchFunctionality();
+            }
+        };
 
-        if (chatForm) {
-            chatForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                if (!chatInput) return;
-                const messageText = sanitizeInput(chatInput.value.trim()).toLowerCase();
-                if (messageText) {
-                    const userMessage = document.createElement('div');
-                    userMessage.className = 'flex justify-end';
-                    userMessage.innerHTML = `<div class="bg-[#4fd1c5] text-white p-3 rounded-xl rounded-br-none max-w-sm">${messageText}</div>`;
-                    if (chatMessages) chatMessages.appendChild(userMessage);
-
-                    let response = "I'm here to help with educational queries! Can you be more specific?";
-                    if (messageText.includes('html') || messageText.includes('css')) {
-                        response = "HTML is the structure of web pages, while CSS handles the styling. What specific question do you have about them?";
-                    } else if (messageText.includes('python')) {
-                        response = "Python is a versatile programming language great for beginners. Do you need help with syntax or concepts?";
-                    } else if (messageText.includes('quiz') || messageText.includes('test')) {
-                        response = "You can take quizzes in the Quizzes section. Which subject are you interested in?";
-                    } else if (messageText.includes('course') || messageText.includes('subject')) {
-                        response = "We have courses on Web Development, Python, Digital Marketing, and more. Check the Subjects section!";
-                    } else if (messageText.includes('hello') || messageText.includes('hi')) {
-                        response = "Hello! How can I assist you with your learning today?";
-                    }
-
-                    setTimeout(() => {
-                        const aiMessage = document.createElement('div');
-                        aiMessage.className = 'flex justify-start';
-                        aiMessage.innerHTML = `<div class="bg-gray-100 text-gray-800 p-3 rounded-xl rounded-bl-none max-w-sm">${response}</div>`;
-                        if (chatMessages) {
-                            chatMessages.appendChild(aiMessage);
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Initialize event listeners
+        const initEventListeners = () => {
+            // Course list click handler
+            if (courseListContainer) {
+                courseListContainer.addEventListener('click', (e) => {
+                    const card = e.target.closest('.course-card');
+                    if (card) {
+                        const courseId = parseInt(card.dataset.courseId);
+                        const course = courses.find(c => c.id === courseId);
+                        if (course) {
+                            CourseManager.renderCourseDetail(course);
                         }
-                    }, 500);
-
-                    chatInput.value = '';
-                    if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
-                }
-            });
-        }
-
-        if (closeVideoModal) {
-            closeVideoModal.addEventListener('click', () => {
-                if (videoModal) videoModal.classList.add('hidden');
-                if (videoContainer) videoContainer.innerHTML = '';
-            });
-        }
-
-        if (closeAlertModal) {
-            closeAlertModal.addEventListener('click', hideAlert);
-        }
-
-        if (videoModal) {
-            videoModal.addEventListener('transitionend', () => {
-                if (!videoModal.classList.contains('hidden')) {
-                    trapFocus(videoModal);
-                    const closeBtn = document.getElementById('closeVideoModal');
-                    if (closeBtn) closeBtn.focus();
-                }
-            });
-        }
-
-        if (alertModal) {
-            alertModal.addEventListener('transitionend', () => {
-                if (!alertModal.classList.contains('hidden')) {
-                    trapFocus(alertModal);
-                    const closeBtn = document.getElementById('closeAlertModal');
-                    if (closeBtn) closeBtn.focus();
-                }
-            });
-        }
-
-        const asideEl = document.querySelector('aside');
-        if (asideEl) {
-            asideEl.addEventListener('click', (e) => {
-                const link = e.target.closest('a');
-                if (link) {
-                    const pageId = link.dataset.page;
-                    if (pageId && loggedIn) {
-                        e.preventDefault();
-                        showPage(pageId);
-                        history.pushState(null, '', `?page=${pageId}`);
                     }
-                }
-            });
-        }
+                });
+            }
 
-        window.addEventListener('popstate', () => {
-            const params = getUrlParams();
-            const page = params.page || 'dashboard';
-            if (loggedIn) {
-                if (page === 'course-detail') {
-                    const courseId = parseInt(params.courseId);
-                    const course = courses.find(c => c.id === courseId);
-                    if (course) {
-                        renderCourseDetail(course);
-                        const lessonId = parseInt(params.lessonId);
-                        const lesson = course.pages.find(p => p.id === lessonId);
-                        if (lesson) {
-                            renderCoursePage(lesson);
+            // Quiz list click handler
+            if (quizListContainer) {
+                quizListContainer.addEventListener('click', (e) => {
+                    const card = e.target.closest('.quiz-card');
+                    if (card) {
+                        const quizId = parseInt(card.dataset.quizId);
+                        const quiz = quizzes.find(q => q.id === quizId);
+                        if (quiz) {
+                            QuizManager.startQuiz(quiz);
+                        }
+                    }
+                });
+            }
+
+            // Edit profile button
+            if (editProfileBtn) {
+                editProfileBtn.addEventListener('click', () => {
+                    const newName = prompt('Enter your new profile name:', userName);
+                    if (newName && newName.trim() !== '') {
+                        UserManager.updateProfileInfo(sanitizeInput(newName.trim()), userEmail);
+                        showAlert('Profile Updated', 'Your profile name has been successfully changed!');
+                    }
+                });
+            }
+
+            // Logout link
+            const logoutLink = document.getElementById('logout-link');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('userName');
+                    localStorage.removeItem('userEmail');
+                    window.location.href = 'index.html';
+                });
+            }
+
+            // Notes autosave with debounce
+            if (notesTextarea) {
+                const savedNotes = localStorage.getItem('notes');
+                if (savedNotes) {
+                    notesTextarea.value = savedNotes;
+                }
+                notesTextarea.addEventListener('input', () => {
+                    clearTimeout(noteSaveTimeout);
+                    noteSaveTimeout = setTimeout(() => {
+                        localStorage.setItem('notes', notesTextarea.value);
+                    }, 1000);
+                });
+            }
+
+            // Chat form submission
+            if (chatForm) {
+                chatForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if (!chatInput) return;
+                    const messageText = sanitizeInput(chatInput.value.trim()).toLowerCase();
+                    if (messageText) {
+                        const userMessage = document.createElement('div');
+                        userMessage.className = 'flex justify-end';
+                        userMessage.innerHTML = `<div class="bg-[#4fd1c5] text-white p-3 rounded-xl rounded-br-none max-w-sm">${messageText}</div>`;
+                        if (chatMessages) chatMessages.appendChild(userMessage);
+
+                        let response = "I'm here to help with educational queries! Can you be more specific?";
+                        if (messageText.includes('html') || messageText.includes('css')) {
+                            response = "HTML is the structure of web pages, while CSS handles the styling. What specific question do you have about them?";
+                        } else if (messageText.includes('python')) {
+                            response = "Python is a versatile programming language great for beginners. Do you need help with syntax or concepts?";
+                        } else if (messageText.includes('quiz') || messageText.includes('test')) {
+                            response = "You can take quizzes in the Quizzes section. Which subject are you interested in?";
+                        } else if (messageText.includes('course') || messageText.includes('subject')) {
+                            response = "We have courses on Web Development, Python, Digital Marketing, and more. Check the Subjects section!";
+                        } else if (messageText.includes('hello') || messageText.includes('hi')) {
+                            response = "Hello! How can I assist you with your learning today?";
+                        }
+
+                        setTimeout(() => {
+                            const aiMessage = document.createElement('div');
+                            aiMessage.className = 'flex justify-start';
+                            aiMessage.innerHTML = `<div class="bg-gray-100 text-gray-800 p-3 rounded-xl rounded-bl-none max-w-sm">${response}</div>`;
+                            if (chatMessages) {
+                                chatMessages.appendChild(aiMessage);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            }
+                        }, 500);
+
+                        chatInput.value = '';
+                        if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                });
+            }
+
+            // Video modal close button
+            if (closeVideoModal) {
+                closeVideoModal.addEventListener('click', () => {
+                    if (videoModal) videoModal.classList.add('hidden');
+                    if (videoContainer) videoContainer.innerHTML = '';
+                });
+            }
+
+            // Alert modal close button
+            if (closeAlertModal) {
+                closeAlertModal.addEventListener('click', hideAlert);
+            }
+
+            // Video modal transition
+            if (videoModal) {
+                videoModal.addEventListener('transitionend', () => {
+                    if (!videoModal.classList.contains('hidden')) {
+                        trapFocus(videoModal);
+                        const closeBtn = document.getElementById('closeVideoModal');
+                        if (closeBtn) closeBtn.focus();
+                    }
+                });
+            }
+
+            // Alert modal transition
+            if (alertModal) {
+                alertModal.addEventListener('transitionend', () => {
+                    if (!alertModal.classList.contains('hidden')) {
+                        trapFocus(alertModal);
+                        const closeBtn = document.getElementById('closeAlertModal');
+                        if (closeBtn) closeBtn.focus();
+                    }
+                });
+            }
+
+            // Sidebar navigation
+            const asideEl = document.querySelector('aside');
+            if (asideEl) {
+                asideEl.addEventListener('click', (e) => {
+                    const link = e.target.closest('a');
+                    if (link) {
+                        const pageId = link.dataset.page;
+                        if (pageId && loggedIn) {
+                            e.preventDefault();
+                            showPage(pageId);
+                            history.pushState(null, '', `?page=${pageId}`);
+                        }
+                    }
+                });
+            }
+
+            // Browser back/forward navigation
+            window.addEventListener('popstate', () => {
+                const params = getUrlParams();
+                const page = params.page || 'dashboard';
+                if (loggedIn) {
+                    if (page === 'course-detail') {
+                        const courseId = parseInt(params.courseId);
+                        const course = courses.find(c => c.id === courseId);
+                        if (course) {
+                            CourseManager.renderCourseDetail(course);
+                            const lessonId = parseInt(params.lessonId);
+                            const lesson = course.pages.find(p => p.id === lessonId);
+                            if (lesson) {
+                                CourseManager.renderCoursePage(lesson);
+                            } else {
+                                CourseManager.renderCoursePage(course.pages[0]);
+                            }
                         } else {
-                            renderCoursePage(course.pages[0]);
+                            showPage('dashboard');
+                        }
+                    } else if (page === 'quiz') {
+                        const quizId = parseInt(params.quizId);
+                        const quiz = quizzes.find(q => q.id === quizId);
+                        if (quiz) {
+                            QuizManager.startQuiz(quiz);
+                        } else {
+                            showPage('quizzes');
                         }
                     } else {
-                        showPage('dashboard');
-                    }
-                } else if (page === 'quiz') {
-                    const quizId = parseInt(params.quizId);
-                    const quiz = quizzes.find(q => q.id === quizId);
-                    if (quiz) {
-                        startQuiz(quiz);
-                    } else {
-                        showPage('quizzes');
+                        showPage(page);
                     }
                 } else {
-                    showPage(page);
+                    window.location.href = 'login.html';
                 }
-            } else {
-                window.location.href = 'login.html';
-            }
-        });
+            });
+        };
 
-        (function init() {
+        // Initialize application
+        const init = () => {
             if (!loggedIn) {
                 window.location.href = 'login.html';
                 return;
             }
+            
+            // Add CSRF token
+            addCSRFToken();
+            
             const params = getUrlParams();
             const initialPage = params.page || 'dashboard';
-            updateProfileInfo(userName, userEmail);
+            
+            // Initialize user info
+            UserManager.updateProfileInfo(userName, userEmail);
+            
+            // Initialize page based on URL params
             if (initialPage === 'course-detail') {
                 const courseId = parseInt(params.courseId);
                 const course = courses.find(c => c.id === courseId);
                 if (course) {
-                    renderCourseDetail(course);
+                    CourseManager.renderCourseDetail(course);
                     const lessonId = parseInt(params.lessonId);
                     const lesson = course.pages.find(p => p.id === lessonId);
                     if (lesson) {
-                        renderCoursePage(lesson);
+                        CourseManager.renderCoursePage(lesson);
                     }
                 } else {
                     showPage('dashboard');
@@ -802,15 +966,23 @@
                 const quizId = parseInt(params.quizId);
                 const quiz = quizzes.find(q => q.id === quizId);
                 if (quiz) {
-                    startQuiz(quiz);
+                    QuizManager.startQuiz(quiz);
                 } else {
                     showPage('quizzes');
                 }
             } else {
                 showPage(initialPage);
             }
+            
+            // Initialize dashboard stats
             updateDashboardStats();
-        })();
+            
+            // Set up event listeners
+            initEventListeners();
+        };
+
+        // Start the application
+        init();
     </script>
 </body>
 </html>

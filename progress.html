@@ -3,25 +3,365 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Progress</title>
+  <title>Your Progress - Pubali EduHub</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #14b8a6;
+      --primary-dark: #0d9488;
+      --secondary: #f59e0b;
+      --secondary-dark: #ea580c;
+      --accent: #6366f1;
+      --accent-dark: #4f46e5;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f0fdfa 0%, #e0f2f1 100%);
+      color: #1f2937;
+    }
+    
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .progress-ring {
+      transition: stroke-dashoffset 0.5s ease;
+    }
+    
+    .animate-progress {
+      transition: width 1.5s ease-in-out;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center p-8">
-
-  <h1 class="text-4xl font-bold mb-6">Your Progress</h1>
-
-  <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 w-full max-w-2xl">
-    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Introduction to Web Development</h2>
-    <div class="flex items-center justify-between mb-4">
-      <div class="text-lg font-medium text-gray-700">HTML & CSS Fundamentals</div>
-      <div class="text-sm font-bold text-teal-500">50% Complete</div>
+<body class="min-h-screen p-6">
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">
+      <div>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Your Learning Progress</h1>
+        <p class="text-gray-600 mt-2">Track your journey and celebrate your achievements</p>
+      </div>
+      <a href="home.html" class="mt-4 md:mt-0 flex items-center text-[#14b8a6] font-semibold hover:text-[#0d9488] transition-colors">
+        <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+      </a>
     </div>
-    <div class="w-full bg-gray-200 rounded-full h-3.5">
-      <div class="bg-teal-500 h-3.5 rounded-full" style="width: 0%;"></div>
+
+    <!-- Progress Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-gradient-to-br from-[#14b8a6] to-[#0d9488] rounded-2xl p-6 shadow-lg text-white">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-semibold">Subjects Enrolled</h3>
+            <p class="text-4xl font-bold mt-2" id="total-subjects">6</p>
+          </div>
+          <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+            <i class="fas fa-book-open text-2xl"></i>
+          </div>
+        </div>
+        <div class="mt-4 text-sm opacity-90">
+          <i class="fas fa-arrow-up mr-1"></i> 2 new this month
+        </div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-[#f59e0b] to-[#ea580c] rounded-2xl p-6 shadow-lg text-white">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-semibold">Subjects Completed</h3>
+            <p class="text-4xl font-bold mt-2" id="completed-subjects">2</p>
+          </div>
+          <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+            <i class="fas fa-check-circle text-2xl"></i>
+          </div>
+        </div>
+        <div class="mt-4 text-sm opacity-90">
+          <i class="fas fa-trophy mr-1"></i> 33% completion rate
+        </div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-[#6366f1] to-[#4f46e5] rounded-2xl p-6 shadow-lg text-white">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-semibold">Avg. Progress</h3>
+            <p class="text-4xl font-bold mt-2" id="avg-progress">58%</p>
+          </div>
+          <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+            <i class="fas fa-chart-line text-2xl"></i>
+          </div>
+        </div>
+        <div class="mt-4 text-sm opacity-90">
+          <i class="fas fa-arrow-up mr-1"></i> 12% from last month
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Filters -->
+    <div class="glass-effect rounded-2xl p-4 mb-6 flex flex-wrap items-center">
+      <span class="text-gray-700 mr-4 font-medium">Filter by:</span>
+      <div class="flex space-x-2">
+        <button class="px-4 py-2 bg-[#14b8a6] text-white rounded-full text-sm font-medium">All Subjects</button>
+        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300">In Progress</button>
+        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300">Completed</button>
+        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300">Not Started</button>
+      </div>
+      <div class="ml-auto mt-4 md:mt-0">
+        <div class="relative">
+          <input type="text" placeholder="Search subjects..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#14b8a6] focus:outline-none w-full md:w-64">
+          <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subject Progress List -->
+    <div class="space-y-6" id="subject-progress-list">
+      <!-- Subject 1 -->
+      <div class="glass-effect rounded-2xl p-6 shadow-sm card-hover">
+        <div class="flex flex-col md:flex-row md:items-center">
+          <div class="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-[#14b8a6] to-[#0d9488] rounded-2xl flex items-center justify-center shadow-md mb-4 md:mb-0 md:mr-6">
+            <i class="fas fa-code text-white text-2xl"></i>
+          </div>
+          <div class="flex-grow">
+            <h2 class="text-xl font-semibold text-gray-900">Introduction to Web Development</h2>
+            <p class="text-gray-600">HTML, CSS, JavaScript fundamentals</p>
+          </div>
+          <div class="mt-4 md:mt-0">
+            <div class="text-right">
+              <span class="text-sm font-bold text-[#14b8a6]" id="progress-percent-1">65% Complete</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+              <div class="bg-gradient-to-r from-[#14b8a6] to-[#0d9488] h-2.5 rounded-full animate-progress" style="width: 65%;" id="progress-bar-1"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 mt-1">
+              <span>13 of 20 lessons</span>
+              <span>Next: JavaScript Functions</span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+          <div class="text-sm text-gray-500">
+            <i class="far fa-clock mr-1"></i> Last studied: 2 days ago
+          </div>
+          <button class="text-sm text-[#14b8a6] font-medium hover:text-[#0d9488] transition-colors">
+            View Details <i class="fas fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Subject 2 -->
+      <div class="glass-effect rounded-2xl p-6 shadow-sm card-hover">
+        <div class="flex flex-col md:flex-row md:items-center">
+          <div class="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-[#f59e0b] to-[#ea580c] rounded-2xl flex items-center justify-center shadow-md mb-4 md:mb-0 md:mr-6">
+            <i class="fas fa-chart-bar text-white text-2xl"></i>
+          </div>
+          <div class="flex-grow">
+            <h2 class="text-xl font-semibold text-gray-900">Data Science Fundamentals</h2>
+            <p class="text-gray-600">Python, Pandas, Data Visualization</p>
+          </div>
+          <div class="mt-4 md:mt-0">
+            <div class="text-right">
+              <span class="text-sm font-bold text-[#f59e0b]" id="progress-percent-2">42% Complete</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+              <div class="bg-gradient-to-r from-[#f59e0b] to-[#ea580c] h-2.5 rounded-full animate-progress" style="width: 42%;" id="progress-bar-2"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 mt-1">
+              <span>8 of 19 lessons</span>
+              <span>Next: Data Cleaning</span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+          <div class="text-sm text-gray-500">
+            <i class="far fa-clock mr-1"></i> Last studied: 1 week ago
+          </div>
+          <button class="text-sm text-[#f59e0b] font-medium hover:text-[#ea580c] transition-colors">
+            View Details <i class="fas fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Subject 3 -->
+      <div class="glass-effect rounded-2xl p-6 shadow-sm card-hover">
+        <div class="flex flex-col md:flex-row md:items-center">
+          <div class="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-md mb-4 md:mb-0 md:mr-6">
+            <i class="fas fa-bullhorn text-white text-2xl"></i>
+          </div>
+          <div class="flex-grow">
+            <h2 class="text-xl font-semibold text-gray-900">Digital Marketing</h2>
+            <p class="text-gray-600">SEO, Social Media, Content Strategy</p>
+          </div>
+          <div class="mt-4 md:mt-0">
+            <div class="text-right">
+              <span class="text-sm font-bold text-[#6366f1]" id="progress-percent-3">90% Complete</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+              <div class="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] h-2.5 rounded-full animate-progress" style="width: 90%;" id="progress-bar-3"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 mt-1">
+              <span>18 of 20 lessons</span>
+              <span>Next: Final Assessment</span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+          <div class="text-sm text-gray-500">
+            <i class="far fa-clock mr-1"></i> Last studied: Yesterday
+          </div>
+          <button class="text-sm text-[#6366f1] font-medium hover:text-[#4f46e5] transition-colors">
+            View Details <i class="fas fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Subject 4 -->
+      <div class="glass-effect rounded-2xl p-6 shadow-sm card-hover">
+        <div class="flex flex-col md:flex-row md:items-center">
+          <div class="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-[#10b981] to-[#059669] rounded-2xl flex items-center justify-center shadow-md mb-4 md:mb-0 md:mr-6">
+            <i class="fas fa-mobile-alt text-white text-2xl"></i>
+          </div>
+          <div class="flex-grow">
+            <h2 class="text-xl font-semibold text-gray-900">Mobile App Development</h2>
+            <p class="text-gray-600">React Native, iOS & Android</p>
+          </div>
+          <div class="mt-4 md:mt-0">
+            <div class="text-right">
+              <span class="text-sm font-bold text-[#10b981]" id="progress-percent-4">100% Complete</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+              <div class="bg-gradient-to-r from-[#10b981] to-[#059669] h-2.5 rounded-full animate-progress" style="width: 100%;" id="progress-bar-4"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 mt-1">
+              <span>15 of 15 lessons</span>
+              <span>Course completed!</span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+          <div class="text-sm text-gray-500">
+            <i class="fas fa-check-circle text-green-500 mr-1"></i> Completed: 2 weeks ago
+          </div>
+          <button class="text-sm text-[#10b981] font-medium hover:text-[#059669] transition-colors">
+            View Certificate <i class="fas fa-award ml-1"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Achievement Section -->
+    <div class="glass-effect rounded-2xl p-6 mt-8">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-6">Your Achievements</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-2xl shadow-sm text-center">
+          <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i class="fas fa-medal text-yellow-500 text-2xl"></i>
+          </div>
+          <h3 class="font-semibold text-gray-900">Fast Learner</h3>
+          <p class="text-sm text-gray-600">Complete a course in record time</p>
+        </div>
+        
+        <div class="bg-white p-4 rounded-2xl shadow-sm text-center">
+          <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i class="fas fa-trophy text-blue-500 text-2xl"></i>
+          </div>
+          <h3 class="font-semibold text-gray-900">Quiz Master</h3>
+          <p class="text-sm text-gray-600">Score 100% on 5 quizzes</p>
+        </div>
+        
+        <div class="bg-white p-4 rounded-2xl shadow-sm text-center">
+          <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i class="fas fa-star text-purple-500 text-2xl"></i>
+          </div>
+          <h3 class="font-semibold text-gray-900">Consistent</h3>
+          <p class="text-sm text-gray-600">Study for 7 days in a row</p>
+        </div>
+        
+        <div class="bg-white p-4 rounded-2xl shadow-sm text-center">
+          <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i class="fas fa-lock text-gray-500 text-2xl"></i>
+          </div>
+          <h3 class="font-semibold text-gray-900">Explorer</h3>
+          <p class="text-sm text-gray-600">Complete 3 different subjects</p>
+        </div>
+      </div>
     </div>
   </div>
 
-  <a href="home.html" class="mt-8 text-blue-600 font-semibold hover:underline">Back to Dashboard</a>
-
+  <script>
+    // Function to update progress from localStorage
+    function updateProgressFromStorage() {
+      // Get progress data from localStorage or use defaults
+      const progressData = JSON.parse(localStorage.getItem('courseProgress')) || {};
+      
+      // Update progress for each subject if data exists
+      if (progressData[1]) {
+        const progressPercent = Math.round((progressData[1].length / 20) * 100);
+        document.getElementById('progress-percent-1').textContent = `${progressPercent}% Complete`;
+        document.getElementById('progress-bar-1').style.width = `${progressPercent}%`;
+        
+        // Update lesson count
+        const lessonCount = document.querySelector('#subject-progress-list div:first-child .text-xs span');
+        if (lessonCount) {
+          lessonCount.textContent = `${progressData[1].length} of 20 lessons`;
+        }
+      }
+      
+      // Update overall stats
+      const completedSubjects = Object.keys(progressData).filter(id => {
+        const subjectLessons = id == 1 ? 20 : id == 2 ? 19 : id == 3 ? 20 : 15;
+        return progressData[id].length >= subjectLessons;
+      }).length;
+      
+      document.getElementById('completed-subjects').textContent = completedSubjects;
+      
+      // Calculate average progress
+      const subjectIds = [1, 2, 3, 4];
+      const subjectLessons = [20, 19, 20, 15];
+      let totalProgress = 0;
+      
+      subjectIds.forEach((id, index) => {
+        if (progressData[id]) {
+          totalProgress += Math.round((progressData[id].length / subjectLessons[index]) * 100);
+        } else {
+          totalProgress += 0;
+        }
+      });
+      
+      const avgProgress = Math.round(totalProgress / subjectIds.length);
+      document.getElementById('avg-progress').textContent = `${avgProgress}%`;
+    }
+    
+    // Initialize progress on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Animate progress bars
+      setTimeout(() => {
+        document.querySelectorAll('.animate-progress').forEach(bar => {
+          bar.style.transition = 'width 1.5s ease-in-out';
+        });
+      }, 100);
+      
+      // Update with stored progress data
+      updateProgressFromStorage();
+      
+      // Simulate updating progress (in a real app, this would come from the backend)
+      setTimeout(() => {
+        // Simulate progress update for demonstration
+        const progressData = JSON.parse(localStorage.getItem('courseProgress')) || {1: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]};
+        localStorage.setItem('courseProgress', JSON.stringify(progressData));
+        updateProgressFromStorage();
+      }, 2000);
+    });
+  </script>
 </body>
 </html>
